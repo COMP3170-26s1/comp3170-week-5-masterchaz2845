@@ -5,11 +5,13 @@ import static org.lwjgl.opengl.GL41.*;
 
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector4f;
 
 import comp3170.OpenGLException;
 import comp3170.IWindowListener;
 import comp3170.ShaderLibrary;
 import comp3170.Window;
+import comp3170.week5.sceneobjects.Camera;
 import comp3170.InputManager;
 
 import java.io.File;
@@ -27,6 +29,7 @@ public class Week5 implements IWindowListener {
 	private long oldTime;
 	
 	private Scene scene;
+	private Camera scenecam;
 
 	public Week5()  throws OpenGLException {		
 		
@@ -44,6 +47,7 @@ public class Week5 implements IWindowListener {
 	}
 	
 	private Vector2i position = new Vector2i();
+	private Vector4f new_position = new Vector4f();
 		
 	private void update() {
 		long time = System.currentTimeMillis();
@@ -52,8 +56,9 @@ public class Week5 implements IWindowListener {
 		if (input.wasMouseClicked()) {
 			// TODO: Get the mouse position into NDC, and then into world space. (TASK 2)
 			input.getCursorPos(position); // This will get the mouse position in screen space.
-
+			//System.out.println(1.0f * position.x/width);
 			// TODO: Add a new flower at the mouse position. (TASK 3)
+			scene.createFlower(new Vector4f(20.0f*(2.0f*position.x/width - 1.0f),-20.0f*(2.0f*position.y/height - 1.0f),0.0f,1.0f));
 		}
 		
 		input.clear(); // Run this to clear input before the next frame.
@@ -65,6 +70,10 @@ public class Week5 implements IWindowListener {
 	private Matrix4f mvpMatrix = new Matrix4f();
 	
 	public void draw() {
+		scenecam = scene.sceneCam();
+		scenecam.GetViewMatrix(viewMatrix);
+		scenecam.GetProjectionMatrix(projectionMatrix);
+		projectionMatrix.mul(viewMatrix,mvpMatrix);
 		update();
 	
 		glClearColor(87.0f/255.0f, 60.0f/255.0f, 23.0f/255.0f, 1.0f); // Dirt brown
@@ -83,6 +92,7 @@ public class Week5 implements IWindowListener {
 		this.height = height;
 		glViewport(0,0,width,height);
 		// TODO: Recalculate the projection matrix when the window is resized. (TASK 2)
+		scene.sceneCam().resize(width, height);
 	}
 
 	@Override

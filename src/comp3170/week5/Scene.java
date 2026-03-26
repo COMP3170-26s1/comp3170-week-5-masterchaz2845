@@ -1,7 +1,7 @@
 package comp3170.week5;
 
-import java.awt.Color;
 
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import comp3170.InputManager;
@@ -11,11 +11,15 @@ import comp3170.week5.sceneobjects.*;
 
 public class Scene extends SceneObject {
 	private Camera camera;
+
+	Vector2i mouse_position = new Vector2i();
 	
 	public Scene() {
 		camera = new Camera();
+		camera.setParent(this);
 		//this.setParent(camera);
-		//camera.getMatrix().translate(1.0f,1.0f,1.0f);
+		//this.getMatrix().translate(0.0f,-1.0f,0.0f);
+		//this.getMatrix().set(camera.GetProjectionMatrix(this.getMatrix()));
 		createFlower(new Vector4f(0.0f,0.0f,0.f,1.0f));		
 	}
 	
@@ -27,7 +31,6 @@ public class Scene extends SceneObject {
 		Flower flower = new Flower(20);
 		flower.setParent(this);	
 		flower.getMatrix().translate(position.x,position.y,0.0f);
-		//flower.getMatrix().scale(0);
 	}
 
 	public void update(InputManager input, float dt) {
