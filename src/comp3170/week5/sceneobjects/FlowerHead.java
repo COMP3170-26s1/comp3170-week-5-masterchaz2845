@@ -1,5 +1,12 @@
 package comp3170.week5.sceneobjects;
 
+import static comp3170.Math.TAU;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
+import static org.lwjgl.opengl.GL11.glDrawElements;
+import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.glBindBuffer;
+
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -18,6 +25,9 @@ public class FlowerHead extends SceneObject {
 
 	private Vector4f[] vertices;
 	private int vertexBuffer;
+	private int[] indices;
+	private int indexBuffer;
+	private float outer_radius = 0.3f;
 
 	public FlowerHead(int nPetals, Vector3f colour) {
 		
@@ -26,8 +36,44 @@ public class FlowerHead extends SceneObject {
 		// Note that this may involve moving some code OUT of this class!
 		
 		shader = ShaderLibrary.instance.compileShader(VERTEX_SHADER, FRAGMENT_SHADER);		
-		
+		vertices = new Vector4f[(nPetals*2) + 1];
+
+		vertices[0] = new Vector4f(0, 0, 0, 1); // centre
+
+		Matrix4f rotate = new Matrix4f();
+		Matrix4f translate = new Matrix4f();
+		translate.translate(0.0f,0.5f,0.0f);
 		petalColour = colour;
+
+		// construct each vertex by rotating the vector (1,0) by fraction i/n of a full
+		// turn
+		// Yes, you can use matricies to transform individual vectors! How cool!
+
+		for (int i = 0; i < nPetals*2; i++) {
+			float angle = i * TAU / (nPetals*2);
+
+			rotate.rotationZ(angle); // R = R(angle)
+			if (i%2 == 0) {
+				vertices[i + 1] = new Vector4f(1.0f-outer_radius, 0, 0, 1); // v = (1,0,0)
+			} else {
+				vertices[i + 1] = new Vector4f(1, 0, 0, 1); // v = (1,0,0)
+			}
+			
+			vertices[i + 1].mul(rotate); // v = R v
+		}
+
+		vertexBuffer = GLBuffers.createBuffer(vertices);
+
+		indices = new int[nPetals * 6]; // each side creates 2 triangle each
+
+		int k = 0;
+		for (int i = 1; i <= nPetals*2; i++) {
+			indices[k++] = 0;
+			indices[k++] = i;
+			indices[k++] = (i % (nPetals*2)) + 1; // wrap around when i = NSIDES
+		}
+
+		indexBuffer = GLBuffers.createIndexBuffer(indices);
 	}
 
 	public void update(float dt) {
@@ -36,5 +82,12 @@ public class FlowerHead extends SceneObject {
 
 	public void drawSelf(Matrix4f mvpMatrix) {
 		// TODO: Add any appropriate draw code. (TASK 1)
+		shader.enable();
+		shader.setUniform("u_mvpMatrix", mvpMatrix);
+		shader.setAttribute("a_position", vertexBuffer);
+		shader.setUniform("u_colour", petalColour);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+		glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
 	}
 }
